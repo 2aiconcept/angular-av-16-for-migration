@@ -1,1 +1,27 @@
-<p>nav works!</p>
+<nav class="d-flex flex-column py-3 px-2 h-100 bg-light border-end">
+  <ul class="nav flex-column gap-1">
+    <li class="nav-item">
+      <a
+        routerLink="/companies"
+        routerLinkActive="active bg-primary text-white rounded"
+        class="nav-link text-dark d-flex align-items-center gap-2 px-3 py-2 rounded"
+        aria-label="Entreprises"
+      >
+        <span class="visually-hidden">Entreprises</span>
+        <span aria-hidden="true">🏢</span>
+        Entreprises
+      </a>
+    </li>
+    <li class="nav-item">
+      <a
+        routerLink="/contacts"
+        routerLinkActive="active bg-primary text-white rounded"
+        class="nav-link text-dark d-flex align-items-center gap-2 px-3 py-2 rounded"
+        aria-label="Contacts"
+      >
+        <span aria-hidden="true">👤</span>
+        Contacts
+      </a>
+    </li>
+  </ul>
+</nav>

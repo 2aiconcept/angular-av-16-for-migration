@@ -1,0 +1,43 @@
+<div class="table-responsive">
+  <table class="table table-striped table-hover align-middle mb-0">
+    <thead class="table-dark">
+      <tr>
+        <th scope="col">Prénom</th>
+        <th scope="col">Nom</th>
+        <th scope="col">Email</th>
+        <th scope="col">Téléphone</th>
+        <th scope="col" class="text-end">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let contact of contacts">
+        <td>{{ contact.prenom }}</td>
+        <td class="fw-semibold">{{ contact.nom }}</td>
+        <td>{{ contact.email }}</td>
+        <td>{{ contact.telephone || '—' }}</td>
+        <td class="text-end">
+          <div class="d-flex justify-content-end gap-2">
+            <a
+              [routerLink]="['/contacts', contact.id, 'edit']"
+              class="btn btn-outline-secondary btn-sm"
+              [attr.aria-label]="'Modifier ' + contact.prenom + ' ' + contact.nom">
+              ✏️
+            </a>
+            <button
+              type="button"
+              class="btn btn-danger btn-sm"
+              [attr.aria-label]="'Supprimer ' + contact.prenom + ' ' + contact.nom"
+              (click)="contactDelete.emit(contact.id)">
+              Supprimer
+            </button>
+          </div>
+        </td>
+      </tr>
+      <tr *ngIf="contacts.length === 0">
+        <td colspan="5" class="text-center text-muted py-4">
+          Aucun contact trouvé.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,31 @@
+<div class="p-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <h1 class="fs-4 fw-bold mb-0">Contacts</h1>
+    <a routerLink="/contacts/add" class="btn btn-primary btn-sm">Ajouter</a>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger" role="alert" aria-live="polite">
+    {{ errorMessage }}
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <ng-container *ngIf="contacts$ | async as contacts; else loading">
+        <app-table-contacts
+          [contacts]="contacts"
+          (contactDelete)="onDelete($event)">
+        </app-table-contacts>
+      </ng-container>
+
+      <ng-template #loading>
+        <div class="d-flex justify-content-center align-items-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+</div>

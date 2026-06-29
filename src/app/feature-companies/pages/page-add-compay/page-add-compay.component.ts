@@ -1,13 +1,40 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { CompanyService } from '../../services/company.service';
+import { CompanyFormData } from '../../../core/models/company.model';
+import { FormCompanyComponent } from '../../components/form-company/form-company.component';
 
 @Component({
   selector: 'app-page-add-compay',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormCompanyComponent],
   templateUrl: './page-add-compay.component.html',
   styleUrls: ['./page-add-compay.component.css']
 })
-export class PageAddCompayComponent {
+export default class PageAddCompayComponent {
+  isLoading = false;
+  errorMessage = '';
 
+  constructor(
+    private companyService: CompanyService,
+    private router: Router
+  ) {}
+
+  onSubmit(data: CompanyFormData): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.companyService.createCompany(data).subscribe({
+      next: () => this.router.navigate(['/companies']),
+      error: (err: Error) => {
+        this.errorMessage = err.message;
+        this.isLoading = false;
+      }
+    });
+  }
+
+  onCancel(): void {
+    this.router.navigate(['/companies']);
+  }
 }

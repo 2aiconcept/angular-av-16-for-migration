@@ -1,0 +1,182 @@
+<main class="auth-page d-flex align-items-center justify-content-center min-vh-100">
+  <div class="auth-card card shadow-sm p-4" style="width: 100%; max-width: 420px;">
+
+    <h1 class="card-title text-center mb-4 fs-4 fw-bold">
+      {{ isSignInMode ? 'Connexion' : 'Créer un compte' }}
+    </h1>
+
+    <!-- Message d'erreur -->
+    <div
+      *ngIf="errorMessage"
+      class="alert alert-danger"
+      role="alert"
+      aria-live="polite"
+      id="auth-error">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Formulaire Connexion -->
+    <form
+      *ngIf="isSignInMode"
+      [formGroup]="signInForm"
+      (ngSubmit)="onSignIn()"
+      aria-label="Formulaire de connexion"
+      novalidate>
+
+      <div class="mb-3">
+        <label for="signin-email" class="form-label">Adresse email</label>
+        <input
+          id="signin-email"
+          type="email"
+          class="form-control"
+          formControlName="email"
+          autocomplete="email"
+          aria-required="true"
+          [attr.aria-describedby]="signInForm.get('email')?.invalid && signInForm.get('email')?.touched ? 'signin-email-error' : null">
+        <div
+          *ngIf="signInForm.get('email')?.invalid && signInForm.get('email')?.touched"
+          id="signin-email-error"
+          class="form-text text-danger"
+          role="alert">
+          Veuillez saisir une adresse email valide.
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label for="signin-password" class="form-label">Mot de passe</label>
+        <input
+          id="signin-password"
+          type="password"
+          class="form-control"
+          formControlName="password"
+          autocomplete="current-password"
+          aria-required="true"
+          [attr.aria-describedby]="signInForm.get('password')?.invalid && signInForm.get('password')?.touched ? 'signin-password-error' : null">
+        <div
+          *ngIf="signInForm.get('password')?.invalid && signInForm.get('password')?.touched"
+          id="signin-password-error"
+          class="form-text text-danger"
+          role="alert">
+          Le mot de passe est requis.
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn-primary w-100"
+        [disabled]="isLoading">
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        {{ isLoading ? 'Connexion...' : 'Se connecter' }}
+      </button>
+    </form>
+
+    <!-- Formulaire Inscription -->
+    <form
+      *ngIf="!isSignInMode"
+      [formGroup]="signUpForm"
+      (ngSubmit)="onSignUp()"
+      aria-label="Formulaire d'inscription"
+      novalidate>
+
+      <div class="row mb-3">
+        <div class="col">
+          <label for="signup-nom" class="form-label">Nom</label>
+          <input
+            id="signup-nom"
+            type="text"
+            class="form-control"
+            formControlName="nom"
+            autocomplete="family-name"
+            aria-required="true"
+            [attr.aria-describedby]="signUpForm.get('nom')?.invalid && signUpForm.get('nom')?.touched ? 'signup-nom-error' : null">
+          <div
+            *ngIf="signUpForm.get('nom')?.invalid && signUpForm.get('nom')?.touched"
+            id="signup-nom-error"
+            class="form-text text-danger"
+            role="alert">
+            Le nom est requis.
+          </div>
+        </div>
+
+        <div class="col">
+          <label for="signup-prenom" class="form-label">Prénom</label>
+          <input
+            id="signup-prenom"
+            type="text"
+            class="form-control"
+            formControlName="prenom"
+            autocomplete="given-name"
+            aria-required="true"
+            [attr.aria-describedby]="signUpForm.get('prenom')?.invalid && signUpForm.get('prenom')?.touched ? 'signup-prenom-error' : null">
+          <div
+            *ngIf="signUpForm.get('prenom')?.invalid && signUpForm.get('prenom')?.touched"
+            id="signup-prenom-error"
+            class="form-text text-danger"
+            role="alert">
+            Le prénom est requis.
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="signup-email" class="form-label">Adresse email</label>
+        <input
+          id="signup-email"
+          type="email"
+          class="form-control"
+          formControlName="email"
+          autocomplete="email"
+          aria-required="true"
+          [attr.aria-describedby]="signUpForm.get('email')?.invalid && signUpForm.get('email')?.touched ? 'signup-email-error' : null">
+        <div
+          *ngIf="signUpForm.get('email')?.invalid && signUpForm.get('email')?.touched"
+          id="signup-email-error"
+          class="form-text text-danger"
+          role="alert">
+          Veuillez saisir une adresse email valide.
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label for="signup-password" class="form-label">Mot de passe</label>
+        <input
+          id="signup-password"
+          type="password"
+          class="form-control"
+          formControlName="password"
+          autocomplete="new-password"
+          aria-required="true"
+          [attr.aria-describedby]="signUpForm.get('password')?.invalid && signUpForm.get('password')?.touched ? 'signup-password-error' : null">
+        <div
+          *ngIf="signUpForm.get('password')?.invalid && signUpForm.get('password')?.touched"
+          id="signup-password-error"
+          class="form-text text-danger"
+          role="alert">
+          Le mot de passe doit contenir au moins 6 caractères.
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn-primary w-100"
+        [disabled]="isLoading">
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        {{ isLoading ? 'Création...' : 'Créer mon compte' }}
+      </button>
+    </form>
+
+    <!-- Toggle signin / signup -->
+    <div class="text-center mt-3">
+      <span class="text-muted small">
+        {{ isSignInMode ? 'Pas encore de compte ?' : 'Déjà un compte ?' }}
+      </span>
+      <button
+        type="button"
+        class="btn btn-link btn-sm p-0 ms-1"
+        (click)="switchMode()">
+        {{ isSignInMode ? 'S\'inscrire' : 'Se connecter' }}
+      </button>
+    </div>
+
+  </div>
+</main>

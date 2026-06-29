@@ -1,1 +1,21 @@
-<p>layout works!</p>
+<div class="d-flex flex-column vh-100">
+
+  <header class="flex-shrink-0">
+    <app-header></app-header>
+  </header>
+
+  <div class="d-flex flex-grow-1 overflow-hidden">
+
+    <nav *ngIf="authService.isAuthenticated()"
+      class="flex-shrink-0 overflow-y-auto layout__nav"
+      aria-label="Navigation principale">
+      <app-nav></app-nav>
+    </nav>
+
+    <main class="flex-grow-1 overflow-y-auto">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
+
+</div>
