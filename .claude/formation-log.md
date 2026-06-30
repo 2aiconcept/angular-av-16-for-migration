@@ -142,6 +142,34 @@ Tu es expert senior sur Angular jusqu'à la verion 21,expert sénior sur vitest,
 
 ## Jour 1 — Après-midi
 
+### 8. Migration Angular 16 → 17 → 18 avec `ng update`
+
+**Outil de référence :**
+Angular fournit un guide interactif officiel pour préparer chaque migration : [https://angular.dev/update-guide](https://angular.dev/update-guide)
+Il permet de sélectionner la version de départ et d'arrivée, et génère une checklist personnalisée des étapes à suivre (breaking changes, schémas de migration automatiques, actions manuelles).
+
+**Ce qui a été fait :**
+
+Étape 1 — Migration 16 → 17 :
+```bash
+ng update @angular/core@17 @angular/cli@17
+```
+- Le CLI applique automatiquement les schematics de migration (imports, syntaxe dépréciée, etc.)
+- Vérification que l'application compile et démarre correctement après la mise à jour
+
+Étape 2 — Migration 17 → 18 :
+```bash
+ng update @angular/core@18 @angular/cli@18
+```
+- Même processus : schematics automatiques + vérification manuelle
+- L'application est maintenant sur Angular 18 — **début de la Phase 2**
+
+**Points clés à retenir pour le guide :**
+- Toujours migrer version par version (16→17 puis 17→18), jamais en saut direct — les schematics de migration ne couvrent qu'un pas à la fois
+- Committer entre chaque `ng update` pour pouvoir revenir en arrière si nécessaire
+- Les schematics automatiques règlent la majorité des breaking changes ; le guide interactif liste ce qui reste à faire manuellement
+- Après `ng update`, lancer `ng serve` et vérifier la console navigateur : aucun warning Angular ne doit subsister sans explication
+
 *(à compléter)*
 
 ---
@@ -170,8 +198,8 @@ Tu es expert senior sur Angular jusqu'à la verion 21,expert sénior sur vitest,
 | Observables vs Signals | J1 matin | ✅ Abordé (théorie) |
 | Vitest | J1 matin | ✅ Abordé (théorie) |
 | Playwright | J1 matin | ✅ Abordé (théorie) |
-| `ng update` 16 → 17 | — | ⏳ À venir |
-| `ng update` 17 → 18 | — | ⏳ À venir |
+| `ng update` 16 → 17 | J1 après-midi | ✅ Effectué |
+| `ng update` 17 → 18 | J1 après-midi | ✅ Effectué |
 | Migration Karma → Vitest | — | ⏳ À venir |
 | Installation Playwright | — | ⏳ À venir |
 | ChangeDetectionStrategy.OnPush | — | ⏳ À venir |
