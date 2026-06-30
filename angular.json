@@ -71,10 +71,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "mini-crm-16:build:production"
+              "buildTarget": "mini-crm-16:build:production"
             },
             "development": {
-              "browserTarget": "mini-crm-16:build:development"
+              "buildTarget": "mini-crm-16:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -82,7 +82,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "mini-crm-16:build"
+            "buildTarget": "mini-crm-16:build"
           }
         },
         "test": {
