@@ -3,34 +3,34 @@
     <h1 class="fs-4 fw-bold mb-0">Modifier l'entreprise</h1>
   </div>
 
-  <div
-    *ngIf="errorMessage"
-    class="alert alert-danger"
-    role="alert"
-    aria-live="polite"
-  >
-    {{ errorMessage }}
-  </div>
+  @if (errorMessage) {
+    <div
+      class="alert alert-danger"
+      role="alert"
+      aria-live="polite"
+      >
+      {{ errorMessage }}
+    </div>
+  }
 
   <div class="card shadow-sm" style="max-width: 600px">
     <div class="card-body">
-      <ng-container *ngIf="company; else loading">
-      <app-form-company
-        [initialData]="company"
-        [isLoading]="isLoading"
-        (formSubmit)="onSubmit($event)"
-        (formCancel)="onCancel()"
-      >
-      </app-form-company>
-      </ng-container>
-
-      <ng-template #loading>
+      @if (company) {
+        <app-form-company
+          [initialData]="company"
+          [isLoading]="isLoading"
+          (formSubmit)="onSubmit($event)"
+          (formCancel)="onCancel()"
+          >
+        </app-form-company>
+      } @else {
         <div class="d-flex justify-content-center py-4">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Chargement...</span>
           </div>
         </div>
-      </ng-template>
+      }
+
     </div>
   </div>
 </div>

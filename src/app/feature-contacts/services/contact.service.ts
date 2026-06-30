@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -7,9 +7,9 @@ import { Contact, ContactFormData } from '../../core/models/contact.model';
 
 @Injectable({ providedIn: 'root' })
 export class ContactService {
-  private readonly apiUrl = environment.apiUrl;
+  private http = inject(HttpClient);
 
-  constructor(private http: HttpClient) {}
+  private readonly apiUrl = environment.apiUrl;
 
   getContacts(): Observable<Contact[]> {
     return this.http.get<Contact[]>(`${this.apiUrl}/contacts`).pipe(

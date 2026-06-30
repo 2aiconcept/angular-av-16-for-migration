@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
@@ -14,10 +14,10 @@ import { TableContactsComponent } from '../../components/table-contacts/table-co
   styleUrls: ['./page-list-contacts.component.css']
 })
 export default class PageListContactsComponent implements OnInit {
+  private contactService = inject(ContactService);
+
   contacts$!: Observable<Contact[]>;
   errorMessage = '';
-
-  constructor(private contactService: ContactService) {}
 
   ngOnInit(): void {
     this.loadContacts();

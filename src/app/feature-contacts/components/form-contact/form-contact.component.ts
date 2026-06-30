@@ -1,15 +1,17 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject } from '@angular/core';
+
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Contact, ContactFormData } from '../../../core/models/contact.model';
 
 @Component({
   selector: 'app-form-contact',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './form-contact.component.html'
 })
 export class FormContactComponent implements OnChanges {
+  private fb = inject(FormBuilder);
+
   @Input() initialData: Contact | null = null;
   @Input() isLoading = false;
   @Output() formSubmit = new EventEmitter<ContactFormData>();
@@ -17,7 +19,10 @@ export class FormContactComponent implements OnChanges {
 
   form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     this.form = this.fb.group({
       nom: ['', Validators.required],
       prenom: ['', Validators.required],

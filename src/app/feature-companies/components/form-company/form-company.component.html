@@ -9,13 +9,14 @@
       formControlName="nom"
       aria-required="true"
       [attr.aria-describedby]="form.get('nom')?.invalid && form.get('nom')?.touched ? 'nom-error' : null">
-    <div
-      *ngIf="form.get('nom')?.invalid && form.get('nom')?.touched"
-      id="nom-error"
-      class="form-text text-danger"
-      role="alert">
-      Le nom est requis.
-    </div>
+    @if (form.get('nom')?.invalid && form.get('nom')?.touched) {
+      <div
+        id="nom-error"
+        class="form-text text-danger"
+        role="alert">
+        Le nom est requis.
+      </div>
+    }
   </div>
 
   <div class="mb-3">
@@ -56,7 +57,9 @@
       type="submit"
       class="btn btn-primary"
       [disabled]="isLoading">
-      <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      @if (isLoading) {
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      }
       {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
     </button>
   </div>

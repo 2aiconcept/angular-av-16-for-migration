@@ -10,13 +10,14 @@
         formControlName="prenom"
         aria-required="true"
         [attr.aria-describedby]="form.get('prenom')?.invalid && form.get('prenom')?.touched ? 'prenom-error' : null">
-      <div
-        *ngIf="form.get('prenom')?.invalid && form.get('prenom')?.touched"
-        id="prenom-error"
-        class="form-text text-danger"
-        role="alert">
-        Le prénom est requis.
-      </div>
+      @if (form.get('prenom')?.invalid && form.get('prenom')?.touched) {
+        <div
+          id="prenom-error"
+          class="form-text text-danger"
+          role="alert">
+          Le prénom est requis.
+        </div>
+      }
     </div>
 
     <div class="col-md-6">
@@ -28,13 +29,14 @@
         formControlName="nom"
         aria-required="true"
         [attr.aria-describedby]="form.get('nom')?.invalid && form.get('nom')?.touched ? 'nom-error' : null">
-      <div
-        *ngIf="form.get('nom')?.invalid && form.get('nom')?.touched"
-        id="nom-error"
-        class="form-text text-danger"
-        role="alert">
-        Le nom est requis.
-      </div>
+      @if (form.get('nom')?.invalid && form.get('nom')?.touched) {
+        <div
+          id="nom-error"
+          class="form-text text-danger"
+          role="alert">
+          Le nom est requis.
+        </div>
+      }
     </div>
   </div>
 
@@ -47,14 +49,19 @@
       formControlName="email"
       aria-required="true"
       [attr.aria-describedby]="form.get('email')?.invalid && form.get('email')?.touched ? 'email-error' : null">
-    <div
-      *ngIf="form.get('email')?.invalid && form.get('email')?.touched"
-      id="email-error"
-      class="form-text text-danger"
-      role="alert">
-      <span *ngIf="form.get('email')?.errors?.['required']">L'email est requis.</span>
-      <span *ngIf="form.get('email')?.errors?.['email']">Format d'email invalide.</span>
-    </div>
+    @if (form.get('email')?.invalid && form.get('email')?.touched) {
+      <div
+        id="email-error"
+        class="form-text text-danger"
+        role="alert">
+        @if (form.get('email')?.errors?.['required']) {
+          <span>L'email est requis.</span>
+        }
+        @if (form.get('email')?.errors?.['email']) {
+          <span>Format d'email invalide.</span>
+        }
+      </div>
+    }
   </div>
 
   <div class="mb-4">
@@ -77,7 +84,9 @@
       type="submit"
       class="btn btn-primary"
       [disabled]="isLoading">
-      <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      @if (isLoading) {
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+      }
       {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
     </button>
   </div>

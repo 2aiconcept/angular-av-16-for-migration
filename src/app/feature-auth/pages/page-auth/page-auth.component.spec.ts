@@ -1,10 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { PageAuthComponent } from './page-auth.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { of, throwError } from 'rxjs';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 
 describe('PageAuthComponent', () => {
   let component: PageAuthComponent;
@@ -15,14 +16,11 @@ describe('PageAuthComponent', () => {
     authServiceSpy = jasmine.createSpyObj('AuthService', ['login', 'register']);
 
     await TestBed.configureTestingModule({
-      imports: [
-        PageAuthComponent,
+    imports: [PageAuthComponent,
         ReactiveFormsModule,
-        RouterTestingModule,
-        HttpClientTestingModule
-      ],
-      providers: [{ provide: AuthService, useValue: authServiceSpy }]
-    }).compileComponents();
+        RouterTestingModule],
+    providers: [{ provide: AuthService, useValue: authServiceSpy }, provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
+}).compileComponents();
 
     fixture = TestBed.createComponent(PageAuthComponent);
     component = fixture.componentInstance;

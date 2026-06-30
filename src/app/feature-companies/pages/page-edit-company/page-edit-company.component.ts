@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
+
 import { ActivatedRoute, Router } from '@angular/router';
 import { CompanyService } from '../../services/company.service';
 import { Company, CompanyFormData } from '../../../core/models/company.model';
@@ -8,22 +8,20 @@ import { FormCompanyComponent } from '../../components/form-company/form-company
 @Component({
   selector: 'app-page-edit-company',
   standalone: true,
-  imports: [CommonModule, FormCompanyComponent],
+  imports: [FormCompanyComponent],
   templateUrl: './page-edit-company.component.html',
   styleUrls: ['./page-edit-company.component.css']
 })
 export default class PageEditCompanyComponent implements OnInit {
+  private companyService = inject(CompanyService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
   company: Company | null = null;
   isLoading = false;
   errorMessage = '';
 
   private companyId!: number;
-
-  constructor(
-    private companyService: CompanyService,
-    private route: ActivatedRoute,
-    private router: Router
-  ) {}
 
   ngOnInit(): void {
     this.companyId = Number(this.route.snapshot.paramMap.get('id'));

@@ -6,11 +6,13 @@
 
   <div class="d-flex flex-grow-1 overflow-hidden">
 
-    <nav *ngIf="authService.isAuthenticated()"
-      class="flex-shrink-0 overflow-y-auto layout__nav"
-      aria-label="Navigation principale">
-      <app-nav></app-nav>
-    </nav>
+    @if (authService.isAuthenticated()) {
+      <nav
+        class="flex-shrink-0 overflow-y-auto layout__nav"
+        aria-label="Navigation principale">
+        <app-nav></app-nav>
+      </nav>
+    }
 
     <main class="flex-grow-1 overflow-y-auto">
       <router-outlet></router-outlet>

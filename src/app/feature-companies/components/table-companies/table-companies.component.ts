@@ -6,14 +6,14 @@ import {
   OnChanges,
   OnInit
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterLink } from '@angular/router';
 import { Company } from '../../../core/models/company.model';
 
 @Component({
   selector: 'app-table-companies',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [RouterLink],
   templateUrl: './table-companies.component.html',
 })
 export class TableCompaniesComponent implements OnChanges, OnInit {

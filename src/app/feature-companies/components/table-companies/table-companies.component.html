@@ -10,34 +10,38 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let company of companies">
-        <td class="fw-semibold">{{ company.nom }}</td>
-        <td>{{ company.secteur || '—' }}</td>
-        <td>{{ company.adresse || '—' }}</td>
-        <td>{{ company.telephone || '—' }}</td>
-        <td class="text-end">
-          <div class="d-flex justify-content-end gap-2">
-            <a
-              [routerLink]="['/companies', company.id, 'edit']"
-              class="btn btn-outline-secondary btn-sm"
-              [attr.aria-label]="'Modifier ' + company.nom">
-              ✏️
-            </a>
-            <button
-              type="button"
-              class="btn btn-danger btn-sm"
-              [attr.aria-label]="'Supprimer ' + company.nom"
-              (click)="companyDelete.emit(company.id)">
-              Supprimer
-            </button>
-          </div>
-        </td>
-      </tr>
-      <tr *ngIf="companies.length === 0">
-        <td colspan="5" class="text-center text-muted py-4">
-          Aucune entreprise trouvée.
-        </td>
-      </tr>
+      @for (company of companies; track company.id) {
+        <tr>
+          <td class="fw-semibold">{{ company.nom }}</td>
+          <td>{{ company.secteur || '—' }}</td>
+          <td>{{ company.adresse || '—' }}</td>
+          <td>{{ company.telephone || '—' }}</td>
+          <td class="text-end">
+            <div class="d-flex justify-content-end gap-2">
+              <a
+                [routerLink]="['/companies', company.id, 'edit']"
+                class="btn btn-outline-secondary btn-sm"
+                [attr.aria-label]="'Modifier ' + company.nom">
+                ✏️
+              </a>
+              <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                [attr.aria-label]="'Supprimer ' + company.nom"
+                (click)="companyDelete.emit(company.id)">
+                Supprimer
+              </button>
+            </div>
+          </td>
+        </tr>
+      }
+      @empty {
+        <tr>
+          <td colspan="5" class="text-center text-muted py-4">
+            Aucune entreprise trouvée.
+          </td>
+        </tr>
+      }
     </tbody>
   </table>
 </div>

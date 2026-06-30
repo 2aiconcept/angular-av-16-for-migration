@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
+
 import { ActivatedRoute, Router } from '@angular/router';
 import { ContactService } from '../../services/contact.service';
 import { Contact, ContactFormData } from '../../../core/models/contact.model';
@@ -8,22 +8,20 @@ import { FormContactComponent } from '../../components/form-contact/form-contact
 @Component({
   selector: 'app-page-edit-contact',
   standalone: true,
-  imports: [CommonModule, FormContactComponent],
+  imports: [FormContactComponent],
   templateUrl: './page-edit-contact.component.html',
   styleUrls: ['./page-edit-contact.component.css']
 })
 export default class PageEditContactComponent implements OnInit {
+  private contactService = inject(ContactService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+
   contact: Contact | null = null;
   isLoading = false;
   errorMessage = '';
 
   private contactId!: number;
-
-  constructor(
-    private contactService: ContactService,
-    private route: ActivatedRoute,
-    private router: Router
-  ) {}
 
   ngOnInit(): void {
     this.contactId = Number(this.route.snapshot.paramMap.get('id'));

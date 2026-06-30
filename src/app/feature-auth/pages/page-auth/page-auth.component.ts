@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
@@ -7,11 +7,15 @@ import { AuthService } from '../../../core/services/auth.service';
 @Component({
   selector: 'app-page-auth',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [ReactiveFormsModule],
   templateUrl: './page-auth.component.html',
   styleUrls: ['./page-auth.component.css']
 })
 export default class PageAuthComponent {
+  private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
   isSignInMode = true;
   isLoading = false;
   errorMessage = '';
@@ -19,11 +23,9 @@ export default class PageAuthComponent {
   signInForm: FormGroup;
   signUpForm: FormGroup;
 
-  constructor(
-    private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
-  ) {
+
+
+  constructor() {
     this.signInForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required]

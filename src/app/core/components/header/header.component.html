@@ -2,19 +2,21 @@
 
   <span class="fw-bold fs-5">Mini CRM</span>
 
-  <button
-    *ngIf="isAuthenticated"
-    type="button"
-    class="btn btn-outline-light btn-sm"
-    (click)="logout()">
-    Déconnexion
-  </button>
+  @if (isAuthenticated) {
+    <button
+      type="button"
+      class="btn btn-outline-light btn-sm"
+      (click)="logout()">
+      Déconnexion
+    </button>
+  }
 
-  <a
-    *ngIf="!isAuthenticated"
-    routerLink="/auth"
-    class="btn btn-outline-light btn-sm">
-    Connexion
-  </a>
+  @if (!isAuthenticated) {
+    <a
+      routerLink="/auth"
+      class="btn btn-outline-light btn-sm">
+      Connexion
+    </a>
+  }
 
 </header>

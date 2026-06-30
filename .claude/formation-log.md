@@ -170,11 +170,330 @@ ng update @angular/core@18 @angular/cli@18
 - Les schematics automatiques règlent la majorité des breaking changes ; le guide interactif liste ce qui reste à faire manuellement
 - Après `ng update`, lancer `ng serve` et vérifier la console navigateur : aucun warning Angular ne doit subsister sans explication
 
-*(à compléter)*
+### 9. Panorama des nouveautés Angular 18 vs Angular 16
+
+Vue d'ensemble des changements à traiter un par un sur l'application support.
+
+#### 9.1 Nouvelle syntaxe de template (`@if`, `@for`, `@switch`)
+
+| Avant Angular 16 | Après Angular 17+ |
+|---|---|
+| `*ngIf="condition"` | `@if (condition) { }` |
+| `*ngFor="let x of list"` | `@for (x of list; track x.id) { }` |
+| `*ngSwitch` | `@switch / @case / @default` |
+
+- `@for` rend le `track` obligatoire — améliore les performances de rendu de liste
+- Préférer `track item.id` (identifiant métier stable) plutôt que `track $index` ou `track item` (référence objet) — le schematic génère `track item` par défaut, à corriger manuellement
+- `@empty` remplace le pattern `@if (collection.length === 0)` à l'intérieur d'un `@for` — plus lisible et co-localisé avec la boucle
+- Plus besoin d'importer `NgIf`, `NgFor`, `NgSwitch` dans le composant
+
+```html
+<!-- Pattern Angular 16 -->
+<tr *ngFor="let company of companies">...</tr>
+<tr *ngIf="companies.length === 0"><td>Aucune entreprise</td></tr>
+
+<!-- Pattern Angular 18 — @empty intégré au @for -->
+@for (company of companies; track company.id) {
+  <tr>...</tr>
+} @empty {
+  <tr><td>Aucune entreprise</td></tr>
+}
+```
+
+**Appliqué sur :** `table-companies.component.html`, `table-contacts.component.html`
+
+#### 9.2 Signals
+
+```typescript
+// Angular 16 : pas de Signals
+companies: Company[] = [];
+
+// Angular 18
+companies = signal<Company[]>([]);
+filteredCount = computed(() => this.companies().filter(c => c.actif).length);
+```
+
+| API | Description |
+|---|---|
+| `signal()` | État réactif local |
+| `computed()` | Valeur dérivée, recalculée automatiquement |
+| `effect()` | Effet de bord déclenché sur changement |
+| `toSignal()` | Convertit un Observable en Signal |
+| `toObservable()` | Convertit un Signal en Observable |
+
+#### 9.3 Inputs/Outputs signals-based
+
+```typescript
+// Angular 16
+@Input() company!: Company;
+@Output() deleted = new EventEmitter<number>();
+
+// Angular 18
+company = input.required<Company>();
+deleted = output<number>();
+```
+
+- `input()` remplace `@Input()` + `ngOnChanges` → réactif nativement
+- `model()` pour le two-way binding signals-based
+
+#### 9.4 `inject()` à la place du constructeur
+
+```typescript
+// Angular 16
+constructor(private companyService: CompanyService) {}
+
+// Angular 18
+private companyService = inject(CompanyService);
+```
+
+- Utilisable en dehors du constructeur (fonctions utilitaires, guards fonctionnels)
+- **`inject()` devient obligatoire** dès qu'on utilise les patterns fonctionnels d'Angular 18 :
+
+| Pattern | Pourquoi `inject()` est obligatoire |
+|---|---|
+| Functional guards | Fonction pure, pas de classe → pas de constructeur |
+| Functional interceptors | Idem — `HttpInterceptorFn` est une simple fonction |
+| Functional resolvers | Idem — `ResolveFn<T>` est une simple fonction |
+
+```typescript
+// Functional guard — inject() seul possible
+export const authGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);  // pas d'autre option
+  const router = inject(Router);
+  return authService.isAuthenticated() ? true : router.parseUrl('/auth');
+};
+
+// Functional interceptor — inject() seul possible
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const authService = inject(AuthService);
+  const token = authService.getToken();
+  const authReq = token
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    : req;
+  return next(authReq);
+};
+
+// Functional resolver — inject() seul possible
+export const companyResolver: ResolveFn<Company> = (route) => {
+  const companyService = inject(CompanyService);
+  return companyService.getCompanyById(Number(route.paramMap.get('id')));
+};
+```
+
+**Point pédagogique clé :** la migration vers `inject()` dans les composants/services est un choix de style ; dans les guards, interceptors et resolvers fonctionnels, c'est une **contrainte technique** — il n'y a pas de constructeur dans une fonction.
+
+#### 9.5 Guards et intercepteurs fonctionnels
+
+**Doc officielle :** [https://angular.dev/guide/routing/common-router-tasks](https://angular.dev/guide/routing/common-router-tasks)
+
+En Angular 15+, les guards et intercepteurs peuvent être de simples fonctions. En Angular 18, c'est le pattern recommandé.
+
+```typescript
+// Angular 16 : class-based
+@Injectable({ providedIn: 'root' })
+export class AuthGuard implements CanActivate {
+  constructor(private authService: AuthService, private router: Router) {}
+  canActivate(): boolean {
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/auth']);
+      return false;
+    }
+    return true;
+  }
+}
+
+// Angular 18 : fonctionnel
+export const authGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  return authService.isAuthenticated() ? true : router.parseUrl('/auth');
+};
+```
+
+**Tous les types de guards fonctionnels :**
+
+---
+
+**`CanActivateFn`** — Protège l'accès à une route
+
+Cas d'usage : route réservée aux utilisateurs connectés.
+
+```typescript
+// auth.guard.ts
+export const authGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  return authService.isAuthenticated() ? true : router.parseUrl('/auth');
+};
+
+// app.routes.ts
+{ path: 'companies', canActivate: [authGuard], loadComponent: ... }
+```
+
+---
+
+**`CanActivateChildFn`** — Protège toutes les routes enfants d'une route parente
+
+Cas d'usage : toute la section `/admin` réservée aux administrateurs — une seule déclaration protège toutes les sous-routes.
+
+```typescript
+// admin.guard.ts
+export const adminGuard: CanActivateChildFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  return authService.isAdmin() ? true : router.parseUrl('/companies');
+};
+
+// app.routes.ts
+{
+  path: 'admin',
+  canActivateChild: [adminGuard],
+  children: [
+    { path: 'users', loadComponent: () => import('./pages/users') },
+    { path: 'stats', loadComponent: () => import('./pages/stats') },
+  ]
+}
+```
+
+---
+
+**`CanDeactivateFn`** — Protège la sortie d'une route
+
+Cas d'usage : confirmation avant de quitter un formulaire avec des modifications non sauvegardées.
+
+```typescript
+// unsaved-changes.guard.ts
+export interface HasUnsavedChanges {
+  hasUnsavedChanges(): boolean;
+}
+
+export const unsavedChangesGuard: CanDeactivateFn<HasUnsavedChanges> = (component) => {
+  if (!component.hasUnsavedChanges()) return true;
+  return confirm('Des modifications non sauvegardées seront perdues. Quitter quand même ?');
+};
+
+// form-company.component.ts — le composant implémente l'interface
+export class FormCompanyComponent implements HasUnsavedChanges {
+  hasUnsavedChanges(): boolean {
+    return this.form.dirty;
+  }
+}
+
+// app.routes.ts
+{ path: 'companies/edit/:id', canDeactivate: [unsavedChangesGuard], loadComponent: ... }
+```
+
+---
+
+**`CanMatchFn`** — Détermine si une route peut être matchée (remplace `CanLoad` depuis Angular 15)
+
+Cas d'usage : charger un module lazy uniquement si l'utilisateur a le bon rôle — si le guard retourne `false`, Angular essaie la route suivante dans la config.
+
+```typescript
+// role.guard.ts
+export const adminMatchGuard: CanMatchFn = () => {
+  const authService = inject(AuthService);
+  return authService.isAdmin();
+};
+
+// app.routes.ts — deux routes sur le même path selon le rôle
+{ path: 'dashboard', canMatch: [adminMatchGuard], loadComponent: () => import('./admin-dashboard') },
+{ path: 'dashboard', loadComponent: () => import('./user-dashboard') },
+```
+
+---
+
+**`ResolveFn<T>`** — Précharge des données avant l'activation (pas un guard mais même famille)
+
+Cas d'usage : charger les données d'une entreprise avant d'afficher la page de détail — évite un état `null` dans le composant.
+
+```typescript
+// company.resolver.ts
+export const companyResolver: ResolveFn<Company> = (route) => {
+  const companyService = inject(CompanyService);
+  return companyService.getCompanyById(Number(route.paramMap.get('id')));
+};
+
+// app.routes.ts
+{
+  path: 'companies/:id',
+  resolve: { company: companyResolver },
+  loadComponent: () => import('./page-detail-company')
+}
+
+// page-detail-company.component.ts — données déjà disponibles dans ngOnInit
+ngOnInit(): void {
+  this.company = this.route.snapshot.data['company'];
+}
+```
+
+#### 9.6 Zoneless experimental
+
+```typescript
+// app.config.ts
+providers: [
+  provideExperimentalZonelessChangeDetection() // remplace zone.js
+]
+```
+
+- Zone.js retiré du `polyfills` dans `angular.json`
+- La change detection ne se déclenche plus automatiquement — les Signals prennent le relais
+- Gain : ~50kb de moins, moins de cycles inutiles
+
+#### 9.7 `ChangeDetectionStrategy.OnPush` — la norme en Angular 18
+
+En mode Zoneless, `OnPush` devient obligatoire sur tous les composants. Sans Zone.js, le mode `Default` ne fonctionne plus correctement.
+
+#### 9.8 Remplacement Karma → Vitest
+
+```typescript
+// Angular 16 : karma.conf.js + jasmine
+// Angular 18 : vitest.config.ts
+import { defineConfig } from 'vitest/config';
+```
+
+- Les tests `describe / it / expect` restent compatibles avec très peu de modifications
 
 ---
 
 ## Jour 2
+
+### 1. Migration guards vers le pattern fonctionnel
+
+**Migration effectuée manuellement** sur `auth.guard.ts` et `public.guard.ts`, en s'appuyant sur la doc officielle Angular : [https://angular.dev/guide/routing/common-router-tasks](https://angular.dev/guide/routing/common-router-tasks)
+
+Il n'existe pas de schematic `ng generate` pour cette migration — contrairement à `@if`/`@for` et `inject()`, elle se fait fichier par fichier à la main. C'est pédagogiquement intéressant car les changements sont lisibles et explicites.
+
+**Changements appliqués :**
+
+- Suppression du décorateur `@Injectable({ providedIn: 'root' })`
+- Suppression de l'implémentation d'interface (`implements CanActivate`)
+- Remplacement de la classe par une `const` typée (`CanActivateFn`)
+- `inject()` utilisé directement dans le corps de la fonction (obligatoire — pas de constructeur)
+- `app.routes.ts` mis à jour : les guards sont maintenant passés directement comme fonctions (pas d'instanciation)
+
+```typescript
+// Avant — Angular 16 class-based
+@Injectable({ providedIn: 'root' })
+export class AuthGuard implements CanActivate {
+  constructor(private authService: AuthService, private router: Router) {}
+  canActivate(): boolean { ... }
+}
+// app.routes.ts
+canActivate: [AuthGuard]  // Angular instancie la classe
+
+// Après — Angular 18 fonctionnel
+export const authGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  return authService.isAuthenticated() ? true : router.parseUrl('/auth');
+};
+// app.routes.ts
+canActivate: [authGuard]  // simple référence à la fonction
+```
+
+**⚠️ Point de vigilance — `parseUrl()` vs `navigate()` :**
+Dans un functional guard, retourner un `UrlTree` (`router.parseUrl('/auth')`) est préférable à `router.navigate()` car Angular gère le redirect de façon synchrone et peut l'annuler si besoin. `router.navigate()` dans un guard peut créer des races conditions.
 
 *(à compléter)*
 
@@ -200,12 +519,14 @@ ng update @angular/core@18 @angular/cli@18
 | Playwright | J1 matin | ✅ Abordé (théorie) |
 | `ng update` 16 → 17 | J1 après-midi | ✅ Effectué |
 | `ng update` 17 → 18 | J1 après-midi | ✅ Effectué |
-| Migration Karma → Vitest | — | ⏳ À venir |
-| Installation Playwright | — | ⏳ À venir |
-| ChangeDetectionStrategy.OnPush | — | ⏳ À venir |
-| Zoneless experimental | — | ⏳ À venir |
-| Signals : `signal()`, `computed()`, `effect()` | — | ⏳ À venir |
-| `toSignal()` / `toObservable()` | — | ⏳ À venir |
-| `inject()` à la place du constructeur | — | ⏳ À venir |
-| `@if` / `@for` nouvelle syntaxe | — | ⏳ À venir |
-| `input()` / `output()` signals-based | — | ⏳ À venir |
+| Panorama nouveautés Angular 18 vs 16 | J1 après-midi | ✅ Abordé |
+| **Migration app — `@if` / `@for` nouvelle syntaxe** | J1 après-midi | ✅ Effectué |
+| **Migration app — `inject()` à la place du constructeur** | J1 après-midi | ✅ Effectué |
+| **Migration app — guards et intercepteurs fonctionnels** | J2 | ✅ Effectué (guards) / ⏳ intercepteurs à venir |
+| **Migration app — `ChangeDetectionStrategy.OnPush`** | — | ⏳ À traiter |
+| **Migration app — `input()` / `output()` signals-based** | — | ⏳ À traiter |
+| **Migration app — Signals : `signal()`, `computed()`, `effect()`** | — | ⏳ À traiter |
+| **Migration app — `toSignal()` / `toObservable()`** | — | ⏳ À traiter |
+| **Migration app — Zoneless experimental** | — | ⏳ À traiter |
+| **Migration tests — Karma → Vitest** | — | ⏳ À traiter |
+| **Migration tests — Installation Playwright** | — | ⏳ À traiter |

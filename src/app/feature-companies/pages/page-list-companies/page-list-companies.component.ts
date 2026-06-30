@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
@@ -11,13 +11,13 @@ import { TableCompaniesComponent } from '../../components/table-companies/table-
   standalone: true,
   imports: [CommonModule, RouterLink, TableCompaniesComponent],
   templateUrl: './page-list-companies.component.html',
-  styleUrls: ['./page-list-companies.component.css']
+  styleUrls: ['./page-list-companies.component.css'],
 })
 export default class PageListCompaniesComponent implements OnInit {
   companies$!: Observable<Company[]>;
   errorMessage = '';
 
-  constructor(private companyService: CompanyService) {}
+  private companyService = inject(CompanyService);
 
   ngOnInit(): void {
     this.loadCompanies();
@@ -26,7 +26,7 @@ export default class PageListCompaniesComponent implements OnInit {
   onDelete(id: number): void {
     this.companyService.deleteCompany(id).subscribe({
       next: () => this.loadCompanies(),
-      error: (err: Error) => this.errorMessage = err.message
+      error: (err: Error) => (this.errorMessage = err.message),
     });
   }
 
