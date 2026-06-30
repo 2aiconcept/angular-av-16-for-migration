@@ -156,7 +156,7 @@ Ne pas configurer le MCP Playwright avant cette étape.
 
 ## Bonnes pratiques Accessibilité (actives dès la Phase 1)
 
-L'accessibilité s'applique dès le départ sur l'appli Angular 16 et se conserve en Phase 2.
+L'accessibilité s'applique dès le départ sur l'appli Angular 16 et se conserve en Phase 2. Quand tu écris du code je veux que les templates html soit full accessibilité.
 
 **À faire :**
 - HTML sémantique : `<nav>`, `<main>`, `<header>`, `<section>`, `<article>`, `<button>` selon le rôle réel
@@ -177,7 +177,7 @@ L'accessibilité s'applique dès le départ sur l'appli Angular 16 et se conserv
 - Messages d'erreur affichés uniquement par la couleur (toujours ajouter texte ou icône)
 - Attributs ARIA inventés ou mal utilisés
 
-## Bonnes pratiques Clean Code (actives en Phase 1 et Phase 2)
+## Bonnes pratiques Clean Code de Robert C Martin (actives en Phase 1 et Phase 2)
 
 **Nommage :**
 - Noms explicites et en anglais : `getCompanyById()` pas `getData()`
