@@ -840,6 +840,114 @@ npx webpack-bundle-analyzer dist/mini-crm-16/stats.json
 
 Génère une visualisation interactive de la composition du bundle — utile pour identifier les dépendances qui font grossir le bundle initial.
 
+### 5. Migration `@Input()` / `@Output()` → `input()` / `output()` signals-based
+
+**Pas de schematic disponible** — la migration `ng generate @angular/core:signal-input-migration` et `ng generate @angular/core:output-migration` n'existent pas en Angular 18. Migration manuelle fichier par fichier.
+
+**Composants migrés :**
+- `table-companies.component.ts` — `companies = input<Company[]>([])`, `companyDelete = output<number>()`
+- `table-contacts.component.ts` — `contacts = input<Contact[]>([])`, `contactDelete = output<number>()`
+- `form-company.component.ts` — `initialData = input<Company | null>(null)`, `isLoading = input<boolean>(false)`, `formSubmit = output<CompanyFormData>()`, `formCancel = output<void>()`
+- `form-contact.component.ts` — `initialData = input<Contact | null>(null)`, `isLoading = input<boolean>(false)`, `formSubmit = output<ContactFormData>()`, `formCancel = output<void>()`
+
+**Avant / après :**
+
+```typescript
+// Angular 16
+@Input() companies: Company[] = [];
+@Output() companyDelete = new EventEmitter<number>();
+
+// Angular 18
+companies = input<Company[]>([]);
+companyDelete = output<number>();
+```
+
+**Appel dans le template du parent :**
+
+```html
+<!-- Angular 16 -->
+<app-table-companies [companies]="companies" (companyDelete)="onDelete($event)" />
+
+<!-- Angular 18 — syntaxe identique côté template, rien ne change -->
+<app-table-companies [companies]="companies" (companyDelete)="onDelete($event)" />
+```
+
+**Dans le template du composant enfant — les inputs sont maintenant des fonctions à appeler :**
+
+```html
+<!-- Angular 16 -->
+@for (company of companies; track company.id) { ... }
+
+<!-- Angular 18 -->
+@for (company of companies(); track company.id) { ... }
+```
+
+**`effect()` remplace `ngOnChanges` pour réagir aux signal inputs :**
+
+Avec `@Input()`, on utilisait `ngOnChanges` pour réagir aux changements. Avec `input()`, `ngOnChanges` ne se déclenche plus — il faut utiliser `effect()` dans le constructeur (qui s'exécute dans le contexte d'injection) :
+
+```typescript
+// Angular 16 — ngOnChanges
+ngOnChanges(): void {
+  if (this.initialData) this.form.patchValue(this.initialData);
+}
+
+// Angular 18 — effect() dans le constructeur
+constructor() {
+  effect(() => {
+    const data = this.initialData(); // signal — relu automatiquement à chaque changement
+    if (data) this.form.patchValue(data);
+  });
+}
+```
+
+**⚠️ Piège TypeScript strict — `input<boolean>(false)` :**
+
+```typescript
+// ❌ TypeScript infère InputSignal<false>, pas InputSignal<boolean>
+isLoading = input(false);
+// → dans le template : isLoading() retourne false (pas boolean) — erreur "Boolean has no call signatures"
+
+// ✅ Toujours typer explicitement quand la valeur par défaut est un littéral
+isLoading = input<boolean>(false);
+```
+
+**⚠️ Piège TypedForms strict — `getRawValue()` et `FormControl<null>` :**
+
+En mode `strict: true`, Angular TypedForms (Angular 14+) infère les types des contrôles depuis la valeur initiale.
+
+```typescript
+// FormBuilder avec strings → infère FormControl<string | null>
+// → getRawValue() retourne { nom: string | null; email: string | null; ... }
+// → pas assignable à CompanyFormData où nom: string
+
+// ❌ Ne compile pas
+this.formSubmit.emit(this.form.getRawValue());
+
+// ✅ Double cast — pattern reconnu pour getRawValue() avec TypedForms strict
+this.formSubmit.emit(this.form.getRawValue() as unknown as CompanyFormData);
+```
+
+```typescript
+// FormBuilder avec null → infère FormControl<null> (pas FormControl<number | null>)
+entreprise_id: [null]             // → FormControl<null> — patchValue(contact) échoue
+entreprise_id: [null as number | null]  // → FormControl<number | null> — correct
+// ou plus explicitement :
+entreprise_id: new FormControl<number | null>(null)  // → sans ambiguïté
+```
+
+**Point pédagogique :** `as unknown as T` est la seule façon propre de contourner les limites d'inférence de TypedForms en TypeScript strict, sans désactiver le typage sur tout le formulaire. L'alternative serait `inject(NonNullableFormBuilder)` pour des formulaires où aucun champ ne doit être `null`.
+
+**⚠️ Piège OnPush + output signal — composant parent non mis à jour :**
+
+Après la migration vers `output()`, si le composant parent utilise `ChangeDetectionStrategy.OnPush` et met à jour une liste via `subscribe()` dans un callback HTTP, le composant enfant ne se re-rend pas. Le signal output émet correctement, mais le parent n'est pas marqué "dirty" par Angular lors du callback asynchrone.
+
+**Cause :** avec OnPush, Angular ne marque le composant dirty que si un signal change, un input change de référence, ou `async` pipe émet. Un `subscribe()` classique ne déclenche rien.
+
+**Solution (étape suivante) :** migrer l'état du parent vers `signal()` ou `toSignal()` — c'est l'argument pédagogique principal pour passer aux Signals dans les composants pages.
+
+---
+
 *(à compléter)*
 
 ---
@@ -869,7 +977,7 @@ Génère une visualisation interactive de la composition du bundle — utile pou
 | **Migration app — `inject()` à la place du constructeur** | J1 après-midi | ✅ Effectué |
 | **Migration app — guards et intercepteurs fonctionnels** | J2 | ✅ Effectué |
 | **Migration app — `ChangeDetectionStrategy.OnPush`** | J2 | ✅ Effectué (19 composants) |
-| **Migration app — `input()` / `output()` signals-based** | — | ⏳ À traiter |
+| **Migration app — `input()` / `output()` signals-based** | J2 | ✅ Effectué (4 composants) |
 | **Migration app — Signals : `signal()`, `computed()`, `effect()`** | — | ⏳ À traiter |
 | **Migration app — `toSignal()` / `toObservable()`** | — | ⏳ À traiter |
 | **Migration app — Zoneless experimental** | — | ⏳ À traiter |

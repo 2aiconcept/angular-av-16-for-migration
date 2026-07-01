@@ -3,10 +3,9 @@ import {
   Component,
   inject,
   OnInit,
+  signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Observable } from 'rxjs';
 import { Company } from '../../../core/models/company.model';
 import { CompanyService } from '../../services/company.service';
 import { TableCompaniesComponent } from '../../components/table-companies/table-companies.component';
@@ -14,14 +13,15 @@ import { TableCompaniesComponent } from '../../components/table-companies/table-
 @Component({
   selector: 'app-page-list-companies',
   standalone: true,
-  imports: [CommonModule, RouterLink, TableCompaniesComponent],
+  imports: [RouterLink, TableCompaniesComponent],
   templateUrl: './page-list-companies.component.html',
   styleUrls: ['./page-list-companies.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class PageListCompaniesComponent implements OnInit {
-  companies$!: Observable<Company[]>;
-  errorMessage = '';
+  companies = signal<Company[]>([]);
+  isLoading = signal(false);
+  errorMessage = signal<string | null>(null);
 
   private companyService = inject(CompanyService);
 
@@ -30,15 +30,24 @@ export default class PageListCompaniesComponent implements OnInit {
   }
 
   onDelete(id: number): void {
-    console.log(id);
     this.companyService.deleteCompany(id).subscribe({
       next: () => this.loadCompanies(),
-      error: (err: Error) => (this.errorMessage = err.message),
+      error: (err: Error) => this.errorMessage.set(err.message),
     });
   }
 
   private loadCompanies(): void {
-    this.errorMessage = '';
-    this.companies$ = this.companyService.getCompanies();
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    this.companyService.getCompanies().subscribe({
+      next: (list) => {
+        this.companies.set(list);
+        this.isLoading.set(false);
+      },
+      error: (err: Error) => {
+        this.errorMessage.set(err.message);
+        this.isLoading.set(false);
+      },
+    });
   }
 }
