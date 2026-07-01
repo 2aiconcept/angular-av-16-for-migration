@@ -1,6 +1,18 @@
-import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormBuilder,
+  FormControl,
+  Validators,
+} from '@angular/forms';
 import { Contact, ContactFormData } from '../../../core/models/contact.model';
 
 @Component({
@@ -10,37 +22,31 @@ import { Contact, ContactFormData } from '../../../core/models/contact.model';
   templateUrl: './form-contact.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FormContactComponent implements OnChanges {
+export class FormContactComponent {
   private fb = inject(FormBuilder);
 
-  @Input() initialData: Contact | null = null;
-  @Input() isLoading = false;
-  @Output() formSubmit = new EventEmitter<ContactFormData>();
-  @Output() formCancel = new EventEmitter<void>();
+  initialData = input<Contact | null>(null);
+  isLoading = input<boolean>(false);
+  formSubmit = output<ContactFormData>();
+  formCancel = output<void>();
 
-  form: FormGroup;
-
-  /** Inserted by Angular inject() migration for backwards compatibility */
-  constructor(...args: unknown[]);
+  form = this.fb.group({
+    nom: ['', Validators.required],
+    prenom: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    telephone: [''],
+    entreprise_id: [null as number | null],
+  });
 
   constructor() {
-    this.form = this.fb.group({
-      nom: ['', Validators.required],
-      prenom: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      telephone: [''],
-      entreprise_id: [null]
+    effect(() => {
+      const data = this.initialData();
+      if (data) this.form.patchValue(data);
     });
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['initialData'] && this.initialData) {
-      this.form.patchValue(this.initialData);
-    }
   }
 
   onSubmit(): void {
     if (this.form.invalid) return;
-    this.formSubmit.emit(this.form.getRawValue());
+    this.formSubmit.emit(this.form.getRawValue() as unknown as ContactFormData);
   }
 }

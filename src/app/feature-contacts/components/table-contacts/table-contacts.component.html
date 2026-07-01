@@ -10,7 +10,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (contact of contacts; track contact.id) {
+      @for (contact of contacts(); track contact.id) {
         <tr>
           <td>{{ contact.prenom }}</td>
           <td class="fw-semibold">{{ contact.nom }}</td>

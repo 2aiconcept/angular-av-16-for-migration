@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { RouterLink } from '@angular/router';
 import { Contact } from '../../../core/models/contact.model';
@@ -11,6 +11,6 @@ import { Contact } from '../../../core/models/contact.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableContactsComponent {
-  @Input() contacts: Contact[] = [];
-  @Output() contactDelete = new EventEmitter<number>();
+  contacts = input<Contact[]>([]);
+  contactDelete = output<number>();
 }

@@ -10,7 +10,7 @@
       </tr>
     </thead>
     <tbody>
-      @for (company of companies; track company.id) {
+      @for (company of companies(); track company.id) {
         <tr>
           <td class="fw-semibold">{{ company.nom }}</td>
           <td>{{ company.secteur || '—' }}</td>

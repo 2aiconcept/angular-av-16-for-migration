@@ -1,6 +1,5 @@
-import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject } from '@angular/core';
-
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, effect, inject, input, output } from '@angular/core';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Company, CompanyFormData } from '../../../core/models/company.model';
 
 @Component({
@@ -10,36 +9,30 @@ import { Company, CompanyFormData } from '../../../core/models/company.model';
   templateUrl: './form-company.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FormCompanyComponent implements OnChanges {
+export class FormCompanyComponent {
   private fb = inject(FormBuilder);
 
-  @Input() initialData: Company | null = null;
-  @Input() isLoading = false;
-  @Output() formSubmit = new EventEmitter<CompanyFormData>();
-  @Output() formCancel = new EventEmitter<void>();
+  initialData = input<Company | null>(null);
+  isLoading = input<boolean>(false);
+  formSubmit = output<CompanyFormData>();
+  formCancel = output<void>();
 
-  form: FormGroup;
-
-  /** Inserted by Angular inject() migration for backwards compatibility */
-  constructor(...args: unknown[]);
+  form = this.fb.group({
+    nom: ['', Validators.required],
+    secteur: [''],
+    adresse: [''],
+    telephone: [''],
+  });
 
   constructor() {
-    this.form = this.fb.group({
-      nom: ['', Validators.required],
-      secteur: [''],
-      adresse: [''],
-      telephone: ['']
+    effect(() => {
+      const data = this.initialData();
+      if (data) this.form.patchValue(data);
     });
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['initialData'] && this.initialData) {
-      this.form.patchValue(this.initialData);
-    }
   }
 
   onSubmit(): void {
     if (this.form.invalid) return;
-    this.formSubmit.emit(this.form.getRawValue());
+    this.formSubmit.emit(this.form.getRawValue() as unknown as CompanyFormData);
   }
 }

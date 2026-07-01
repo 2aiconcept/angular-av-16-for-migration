@@ -1,11 +1,8 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  Input,
-  Output,
-  EventEmitter,
-  OnChanges,
-  OnInit
+  input,
+  output,
 } from '@angular/core';
 
 import { RouterLink } from '@angular/router';
@@ -18,17 +15,15 @@ import { Company } from '../../../core/models/company.model';
   templateUrl: './table-companies.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TableCompaniesComponent implements OnChanges, OnInit {
-  @Input() companies: Company[] = [];
-  @Output() companyDelete = new EventEmitter<number>();
+export class TableCompaniesComponent {
+  companies = input<Company[]>([]);
+  companyDelete = output<number>();
 
-  ngOnChanges() {
-    console.log('ng on changes calldes');
-    console.log(this.companies);
+  effect() {
+    console.log('effect', this.companies());
   }
 
-  ngOnInit() {
-    console.log('ng on init calldes');
-    console.log(this.companies);
+  ngOnChanges() {
+    console.log('ng on changes', this.companies());
   }
 }

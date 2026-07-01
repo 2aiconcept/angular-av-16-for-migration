@@ -1,4 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  OnInit,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
@@ -25,6 +30,7 @@ export default class PageListCompaniesComponent implements OnInit {
   }
 
   onDelete(id: number): void {
+    console.log(id);
     this.companyService.deleteCompany(id).subscribe({
       next: () => this.loadCompanies(),
       error: (err: Error) => (this.errorMessage = err.message),
