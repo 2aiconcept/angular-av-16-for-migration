@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from '../header/header.component';
@@ -10,10 +10,9 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [RouterOutlet, HeaderComponent, NavComponent],
   templateUrl: './layout.component.html',
-  styleUrls: ['./layout.component.css']
+  styleUrls: ['./layout.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush, // ← ajouter cette ligne
 })
 export class LayoutComponent {
   authService = inject(AuthService);
-
-
 }

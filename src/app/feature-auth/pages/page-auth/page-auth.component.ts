@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,7 +9,8 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './page-auth.component.html',
-  styleUrls: ['./page-auth.component.css']
+  styleUrls: ['./page-auth.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class PageAuthComponent {
   private fb = inject(FormBuilder);

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { Router } from '@angular/router';
 import { ContactService } from '../../services/contact.service';
@@ -10,7 +10,8 @@ import { FormContactComponent } from '../../components/form-contact/form-contact
   standalone: true,
   imports: [FormContactComponent],
   templateUrl: './page-add-contact.component.html',
-  styleUrls: ['./page-add-contact.component.css']
+  styleUrls: ['./page-add-contact.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class PageAddContactComponent {
   private contactService = inject(ContactService);

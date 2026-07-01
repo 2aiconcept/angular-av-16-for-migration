@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter } from '@angular/core';
 
 import { RouterLink } from '@angular/router';
 import { Contact } from '../../../core/models/contact.model';
@@ -7,7 +7,8 @@ import { Contact } from '../../../core/models/contact.model';
   selector: 'app-table-contacts',
   standalone: true,
   imports: [RouterLink],
-  templateUrl: './table-contacts.component.html'
+  templateUrl: './table-contacts.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableContactsComponent {
   @Input() contacts: Contact[] = [];

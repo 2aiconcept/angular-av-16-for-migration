@@ -1,29 +1,9 @@
 import { inject } from '@angular/core';
-import {
-  ActivatedRouteSnapshot,
-  CanActivateFn,
-  RouterStateSnapshot,
-} from '@angular/router';
+import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
-// @Injectable({ providedIn: 'root' })
-// export class PublicGuard implements CanActivate {
-//   private authService = inject(AuthService);
-//   private router = inject(Router);
-
-//   canActivate(): boolean {
-//     if (this.authService.isAuthenticated()) {
-//       this.router.navigate(['/companies']);
-//       return false;
-//     }
-//     return true;
-//   }
-// }
-
-export const PublicGuard: CanActivateFn = (
-  route: ActivatedRouteSnapshot,
-  state: RouterStateSnapshot,
-) => {
+export const PublicGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
-  return authService.isAuthenticated();
+  const router = inject(Router);
+  return authService.isAuthenticated() ? router.parseUrl('/companies') : true;
 };

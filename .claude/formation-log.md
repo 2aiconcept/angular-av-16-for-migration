@@ -492,8 +492,353 @@ export const authGuard: CanActivateFn = () => {
 canActivate: [authGuard]  // simple référence à la fonction
 ```
 
-**⚠️ Point de vigilance — `parseUrl()` vs `navigate()` :**
-Dans un functional guard, retourner un `UrlTree` (`router.parseUrl('/auth')`) est préférable à `router.navigate()` car Angular gère le redirect de façon synchrone et peut l'annuler si besoin. `router.navigate()` dans un guard peut créer des races conditions.
+**Code final des deux guards migrés :**
+
+```typescript
+// auth.guard.ts — protège les routes authentifiées
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+
+export const AuthGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  return authService.isAuthenticated() ? true : router.parseUrl('/auth');
+};
+```
+
+```typescript
+// public.guard.ts — protège les routes publiques (ex: /auth)
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+
+export const PublicGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  return authService.isAuthenticated() ? router.parseUrl('/companies') : true;
+};
+```
+
+**⚠️ Piège classique de la migration — `router.navigate()` vs `router.parseUrl()` dans un guard :**
+
+`router.navigate()` est **interdit dans un guard** — voici pourquoi :
+
+```typescript
+// ❌ Pattern Angular 16 class-based traduit naïvement en fonctionnel
+export const authGuard: CanActivateFn = () => {
+  router.navigate(['/auth']); // démarre une navigation #2
+  return false;               // annule la navigation #1
+  // → deux navigations simultanées dans le pipeline Angular
+  // → race condition : la #2 peut être annulée par l'annulation de la #1
+  // → résultat : page blanche, boucle de redirection, comportement imprévisible
+};
+
+// ✅ Pattern Angular 18 correct
+export const authGuard: CanActivateFn = () => {
+  return router.parseUrl('/auth'); // retourne un UrlTree
+  // → Angular redirige la navigation #1 vers /auth dans la même transaction
+  // → pas de deuxième navigation créée, pas de race condition
+};
+```
+
+**Ce qui se passe dans le pipeline Angular :**
+
+```
+// router.navigate() + return false
+Guard reçoit navigation #1 (vers /companies)
+  ├─ router.navigate(['/auth']) → crée navigation #2 (asynchrone)
+  └─ return false               → annule navigation #1
+       └─ navigation #2 peut être annulée aussi → rien ne se passe ❌
+
+// router.parseUrl()
+Guard reçoit navigation #1 (vers /companies)
+  └─ return UrlTree('/auth')    → Angular transforme #1 en redirect vers /auth ✅
+```
+
+**Règle absolue pour la formation :** dans un guard, ne jamais appeler `router.navigate()`. Toujours retourner `true`, `false`, ou un `UrlTree` (`router.parseUrl()` ou `router.createUrlTree()`).
+
+| Retour du guard | Effet |
+|---|---|
+| `true` | Navigation autorisée |
+| `false` | Navigation annulée (page blanche si pas de redirect) |
+| `router.parseUrl('/path')` | Redirect depuis une chaîne — le plus courant |
+| `router.createUrlTree(['/path', { id }])` | Redirect avec paramètres dynamiques |
+
+---
+
+### 2. Router Events
+
+**Doc officielle :** [https://angular.dev/api/router](https://angular.dev/api/router)
+
+Angular Router émet des événements à chaque étape du cycle de navigation. On s'y abonne via `router.events` — un `Observable<Event>`.
+
+```typescript
+export class AppComponent implements OnInit {
+  private router = inject(Router);
+
+  ngOnInit(): void {
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationStart) {
+        // afficher un spinner global
+      }
+      if (event instanceof NavigationEnd) {
+        // masquer le spinner
+      }
+    });
+  }
+}
+```
+
+**Ordre d'émission lors d'une navigation complète :**
+
+```
+NavigationStart
+  └─ RouteConfigLoadStart   (si lazy loading)
+  └─ RouteConfigLoadEnd     (si lazy loading)
+  └─ RoutesRecognized
+  └─ GuardsCheckStart
+       └─ ChildActivationStart
+       └─ ActivationStart
+  └─ GuardsCheckEnd
+  └─ ResolveStart
+  └─ ResolveEnd
+       └─ ChildActivationEnd
+       └─ ActivationEnd
+NavigationEnd | NavigationCancel | NavigationError
+```
+
+---
+
+**Détail de chaque événement :**
+
+| Événement | Moment d'émission | Utilité principale |
+|---|---|---|
+| `NavigationStart` | Début de navigation | Afficher un loader/spinner global |
+| `RouteConfigLoadStart` | Avant le chargement lazy d'un module | Logger les performances de chargement |
+| `RouteConfigLoadEnd` | Après le chargement lazy d'un module | Calculer le temps de chargement du chunk |
+| `RoutesRecognized` | URL parsée, route identifiée | Accéder à la route cible avant activation |
+| `GuardsCheckStart` | Début de l'exécution des guards | Debug — savoir quand les guards s'exécutent |
+| `ChildActivationStart` | Début d'activation des routes enfants | Rarement utile directement |
+| `ActivationStart` | Début d'activation d'une route | Accéder aux données de la route (params, data) |
+| `GuardsCheckEnd` | Fin de l'exécution des guards | Savoir si la navigation a été autorisée |
+| `ResolveStart` | Début de l'exécution des resolvers | Debug des resolvers |
+| `ResolveEnd` | Fin des resolvers | Données préchargées disponibles |
+| `ChildActivationEnd` | Fin d'activation des routes enfants | Rarement utile directement |
+| `ActivationEnd` | Fin d'activation d'une route | Lire les données résolues |
+| `NavigationEnd` | Navigation terminée avec succès | Masquer le loader, analytics (URL finale) |
+| `NavigationCancel` | Navigation annulée par un guard | Afficher un message d'accès refusé |
+| `NavigationError` | Navigation échouée (erreur technique) | Afficher une page d'erreur, logger |
+| `Scroll` | Après `NavigationEnd`, si ScrollPositionRestoration activé | Gérer le scroll manuel |
+
+---
+
+**Cas d'usage concrets :**
+
+**1. Loader global pendant la navigation**
+```typescript
+// app.component.ts
+export class AppComponent {
+  private router = inject(Router);
+  isNavigating = false;
+
+  constructor() {
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationStart) this.isNavigating = true;
+      if (event instanceof NavigationEnd
+        || event instanceof NavigationCancel
+        || event instanceof NavigationError) {
+        this.isNavigating = false;
+      }
+    });
+  }
+}
+```
+
+**2. Tracking analytics (Google Analytics, Matomo…)**
+```typescript
+this.router.events
+  .pipe(filter(event => event instanceof NavigationEnd))
+  .subscribe((event: NavigationEnd) => {
+    analytics.trackPageView(event.urlAfterRedirects);
+  });
+```
+
+**3. Détecter qu'un guard a bloqué la navigation**
+```typescript
+this.router.events
+  .pipe(filter(event => event instanceof NavigationCancel))
+  .subscribe((event: NavigationCancel) => {
+    console.warn('Navigation annulée :', event.reason);
+  });
+```
+
+**4. Mesurer le temps de chargement d'un module lazy**
+```typescript
+let loadStart: number;
+
+this.router.events.subscribe(event => {
+  if (event instanceof RouteConfigLoadStart) loadStart = Date.now();
+  if (event instanceof RouteConfigLoadEnd) {
+    console.log(`Chunk chargé en ${Date.now() - loadStart}ms`);
+  }
+});
+```
+
+**Point pédagogique :** `router.events` est un Observable — c'est l'endroit idéal pour illustrer l'opérateur `filter()` de RxJS avec `instanceof`, avant d'aborder `toSignal()` pour convertir cet Observable en Signal.
+
+---
+
+### 3. Environments et `fileReplacements` dans `angular.json`
+
+**Doc officielle :** [https://angular.dev/tools/cli/environments](https://angular.dev/tools/cli/environments)
+
+Angular permet de définir des fichiers de configuration différents selon l'environnement de build (dev, prod, staging…). La mécanique repose sur `fileReplacements` dans `angular.json`.
+
+**Structure des fichiers d'environnement :**
+
+```
+src/
+└── environments/
+    ├── environment.ts        ← utilisé par défaut (développement)
+    └── environment.prod.ts   ← substitué automatiquement en production
+```
+
+```typescript
+// environment.ts (développement)
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:8080/api'
+};
+
+// environment.prod.ts (production)
+export const environment = {
+  production: true,
+  apiUrl: 'https://mini-crm-api-jwt-production.up.railway.app/api'
+};
+```
+
+**Configuration dans `angular.json` (extrait du projet) :**
+
+```json
+"configurations": {
+  "production": {
+    "fileReplacements": [
+      {
+        "replace": "src/environments/environment.ts",
+        "with": "src/environments/environment.prod.ts"
+      }
+    ]
+  }
+}
+```
+
+Lors d'un `ng build` (production par défaut), Angular remplace automatiquement `environment.ts` par `environment.prod.ts` avant la compilation — le code applicatif importe toujours `environment.ts`, Angular gère la substitution.
+
+**Usage dans le code :**
+
+```typescript
+// Toujours importer environment.ts — jamais environment.prod.ts directement
+import { environment } from '../../../environments/environment';
+
+@Injectable({ providedIn: 'root' })
+export class CompanyService {
+  private readonly apiUrl = environment.apiUrl; // ← valeur substituée selon le build
+}
+```
+
+**Commandes :**
+
+```bash
+ng serve                    # development (environment.ts)
+ng serve --configuration=production  # production (environment.prod.ts)
+ng build                    # production par défaut (defaultConfiguration: "production")
+ng build --configuration=development # développement
+```
+
+**Ajouter un environnement staging :**
+
+```bash
+ng generate environments    # génère les fichiers manquants si besoin
+```
+
+Puis dans `angular.json`, dupliquer le bloc `production` en `staging` avec les bonnes valeurs et le bon `fileReplacements`.
+
+**Point pédagogique :** l'import reste toujours `environment.ts` — c'est Angular CLI qui fait la substitution au moment du build, pas TypeScript. Cela permet d'avoir un seul code source qui fonctionne dans tous les environnements.
+
+---
+
+### 4. Budgets dans `angular.json`
+
+**Doc officielle :** [https://angular.dev/tools/cli/build#configure-size-budgets](https://angular.dev/tools/cli/build#configure-size-budgets)
+
+Les budgets de build permettent de définir des seuils de taille de bundle. Angular émet un warning ou une erreur si un seuil est dépassé — c'est un filet de sécurité contre la régression de performance.
+
+**Configuration actuelle du projet :**
+
+```json
+"budgets": [
+  {
+    "type": "initial",
+    "maximumWarning": "550kb",
+    "maximumError": "700kb"
+  },
+  {
+    "type": "anyComponentStyle",
+    "maximumWarning": "2kb",
+    "maximumError": "4kb"
+  }
+]
+```
+
+**Tous les types de budgets :**
+
+| Type | Ce qu'il mesure | Cas d'usage |
+|---|---|---|
+| `initial` | Bundle chargé au démarrage (main + polyfills) | Le plus important — impacte le Time to Interactive |
+| `all` | Somme de tous les bundles (lazy inclus) | Taille totale de l'application |
+| `allScript` | Somme de tous les JS | Détecter une explosion de dépendances |
+| `any` | N'importe quel chunk individuel | Empêcher un lazy module de grossir trop |
+| `anyScript` | N'importe quel fichier JS individuel | Surveiller les chunks lazy un par un |
+| `anyComponentStyle` | Style inline d'un composant (CSS dans le `.ts`) | Empêcher les styles lourds dans les composants |
+
+**Bonnes pratiques :**
+
+```json
+"budgets": [
+  {
+    "type": "initial",
+    "maximumWarning": "400kb",
+    "maximumError": "600kb"
+  },
+  {
+    "type": "anyComponentStyle",
+    "maximumWarning": "2kb",
+    "maximumError": "4kb"
+  },
+  {
+    "type": "any",
+    "maximumWarning": "200kb",
+    "maximumError": "300kb"
+  }
+]
+```
+
+- **`initial` : viser < 400kb** — c'est ce que l'utilisateur télécharge avant de voir quoi que ce soit
+- **`anyComponentStyle` : rester à 2kb** — les styles lourds appartiennent à un fichier `.css` global, pas au composant
+- **`any` : surveiller les lazy chunks** — un chunk de 500kb est souvent signe d'une dépendance mal placée
+
+**Effet du mode Zoneless sur les budgets :**
+En supprimant Zone.js (~50kb minifié), le bundle `initial` diminue automatiquement — c'est un argument concret en faveur de la migration Zoneless.
+
+**Commande pour analyser la taille des bundles :**
+
+```bash
+ng build --stats-json
+npx webpack-bundle-analyzer dist/mini-crm-16/stats.json
+```
+
+Génère une visualisation interactive de la composition du bundle — utile pour identifier les dépendances qui font grossir le bundle initial.
 
 *(à compléter)*
 
@@ -522,8 +867,8 @@ Dans un functional guard, retourner un `UrlTree` (`router.parseUrl('/auth')`) es
 | Panorama nouveautés Angular 18 vs 16 | J1 après-midi | ✅ Abordé |
 | **Migration app — `@if` / `@for` nouvelle syntaxe** | J1 après-midi | ✅ Effectué |
 | **Migration app — `inject()` à la place du constructeur** | J1 après-midi | ✅ Effectué |
-| **Migration app — guards et intercepteurs fonctionnels** | J2 | ✅ Effectué (guards) / ⏳ intercepteurs à venir |
-| **Migration app — `ChangeDetectionStrategy.OnPush`** | — | ⏳ À traiter |
+| **Migration app — guards et intercepteurs fonctionnels** | J2 | ✅ Effectué |
+| **Migration app — `ChangeDetectionStrategy.OnPush`** | J2 | ✅ Effectué (19 composants) |
 | **Migration app — `input()` / `output()` signals-based** | — | ⏳ À traiter |
 | **Migration app — Signals : `signal()`, `computed()`, `effect()`** | — | ⏳ À traiter |
 | **Migration app — `toSignal()` / `toObservable()`** | — | ⏳ À traiter |

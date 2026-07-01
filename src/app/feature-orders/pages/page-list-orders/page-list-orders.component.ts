@@ -1,12 +1,12 @@
-import { Component } from '@angular/core';
-
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
   selector: 'app-page-list-orders',
   standalone: true,
   imports: [],
   templateUrl: './page-list-orders.component.html',
-  styleUrls: ['./page-list-orders.component.css']
+  styleUrls: ['./page-list-orders.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PageListOrdersComponent {
 

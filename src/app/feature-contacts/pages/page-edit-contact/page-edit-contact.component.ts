@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 
 import { ActivatedRoute, Router } from '@angular/router';
 import { ContactService } from '../../services/contact.service';
@@ -10,7 +10,8 @@ import { FormContactComponent } from '../../components/form-contact/form-contact
   standalone: true,
   imports: [FormContactComponent],
   templateUrl: './page-edit-contact.component.html',
-  styleUrls: ['./page-edit-contact.component.css']
+  styleUrls: ['./page-edit-contact.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class PageEditContactComponent implements OnInit {
   private contactService = inject(ContactService);

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
@@ -12,6 +12,7 @@ import { TableCompaniesComponent } from '../../components/table-companies/table-
   imports: [CommonModule, RouterLink, TableCompaniesComponent],
   templateUrl: './page-list-companies.component.html',
   styleUrls: ['./page-list-companies.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class PageListCompaniesComponent implements OnInit {
   companies$!: Observable<Company[]>;

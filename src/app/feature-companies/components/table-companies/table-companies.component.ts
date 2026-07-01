@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   Input,
   Output,
@@ -15,6 +16,7 @@ import { Company } from '../../../core/models/company.model';
   standalone: true,
   imports: [RouterLink],
   templateUrl: './table-companies.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableCompaniesComponent implements OnChanges, OnInit {
   @Input() companies: Company[] = [];

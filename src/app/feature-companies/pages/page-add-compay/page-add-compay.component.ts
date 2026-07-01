@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { Router } from '@angular/router';
 import { CompanyService } from '../../services/company.service';
@@ -10,7 +10,8 @@ import { FormCompanyComponent } from '../../components/form-company/form-company
   standalone: true,
   imports: [FormCompanyComponent],
   templateUrl: './page-add-compay.component.html',
-  styleUrls: ['./page-add-compay.component.css']
+  styleUrls: ['./page-add-compay.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export default class PageAddCompayComponent {
   private companyService = inject(CompanyService);

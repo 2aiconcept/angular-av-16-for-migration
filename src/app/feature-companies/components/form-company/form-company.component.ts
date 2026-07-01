@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject } from '@angular/core';
 
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Company, CompanyFormData } from '../../../core/models/company.model';
@@ -7,7 +7,8 @@ import { Company, CompanyFormData } from '../../../core/models/company.model';
   selector: 'app-form-company',
   standalone: true,
   imports: [ReactiveFormsModule],
-  templateUrl: './form-company.component.html'
+  templateUrl: './form-company.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FormCompanyComponent implements OnChanges {
   private fb = inject(FormBuilder);
