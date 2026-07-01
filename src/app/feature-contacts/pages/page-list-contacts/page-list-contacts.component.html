@@ -5,27 +5,26 @@
     <a routerLink="/contacts/add" class="btn btn-primary btn-sm">Ajouter</a>
   </div>
 
-  @if (errorMessage) {
+  @if (errorMessage()) {
     <div class="alert alert-danger" role="alert" aria-live="polite">
-      {{ errorMessage }}
+      {{ errorMessage() }}
     </div>
   }
 
   <div class="card shadow-sm">
     <div class="card-body p-0">
-      @if (contacts$ | async; as contacts) {
-        <app-table-contacts
-          [contacts]="contacts"
-          (contactDelete)="onDelete($event)">
-        </app-table-contacts>
-      } @else {
+      @if (isLoading()) {
         <div class="d-flex justify-content-center align-items-center py-5">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Chargement...</span>
           </div>
         </div>
+      } @else {
+        <app-table-contacts
+          [contacts]="contacts()"
+          (contactDelete)="onDelete($event)">
+        </app-table-contacts>
       }
-
     </div>
   </div>
 
